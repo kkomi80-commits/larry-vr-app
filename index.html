@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="라오어 VR Pro">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f46e5' width='100' height='100'/><text y='75' font-size='70' fill='white' text-anchor='middle' x='50'>📊</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <title>라오어 VR 리밸런싱 Pro</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none;
+        }
+        
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        input[type="number"], input[type="text"] {
+            font-size: 16px;
+        }
+        
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        
+        .notification-badge {
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        const LucideIcon = ({ name, size = 24, className = "" }) => {
+            const icons = {
+                TrendingUp: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                ),
+                History: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                        <path d="M12 7v5l4 2"></path>
+                    </svg>
+                ),
+                Activity: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                ),
+                Target: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="6"></circle>
+                        <circle cx="12" cy="12" r="2"></circle>
+                    </svg>
+                ),
+                DollarSign: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                ),
+                AlertCircle: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                ),
+                RefreshCw: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                ),
+                Save: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                ),
+                Bell: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                ),
+                Zap: (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                )
+            };
+            return icons[name] || null;
+        };
+
+        const LarryVRRebalancerPro = () => {
+            const [targetRatio, setTargetRatio] = useState({ SOLX: 50, TQQQ: 50 });
+            const [threshold, setThreshold] = useState(5);
+            const [portfolio, setPortfolio] = useState({
+                SOLX: { shares: 0, price: 0 },
+                TQQQ: { shares: 0, price: 0 }
+            });
+            
+            const [gValue, setGValue] = useState(10);
+            const [poolCash, setPoolCash] = useState(0);
+            const [investmentType, setInvestmentType] = useState('accumulation');
+            const [history, setHistory] = useState([]);
+            const [showHistory, setShowHistory] = useState(false);
+            
+            // 실시간 주가 관련
+            const [apiKey, setApiKey] = useState('');
+            const [showApiSetup, setShowApiSetup] = useState(false);
+            const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+            const [lastUpdate, setLastUpdate] = useState(null);
+            const [priceChangeSOLX, setPriceChangeSOLX] = useState(0);
+            const [priceChangeTQQQ, setPriceChangeTQQQ] = useState(0);
+            
+            // 알림 관련
+            const [notifications, setNotifications] = useState([]);
+            const [notificationEnabled, setNotificationEnabled] = useState(false);
+            const [autoRefresh, setAutoRefresh] = useState(false);
+            const refreshInterval = useRef(null);
+
+            const COLORS = {
+                SOLX: '#3b82f6',
+                TQQQ: '#10b981',
+                cash: '#f59e0b'
+            };
+
+            const recommendedG = {
+                accumulation: 10,
+                lumpsum: 10,
+                withdrawal: 20
+            };
+
+            // 로컬 저장소에서 API 키 로드
+            useEffect(() => {
+                const savedKey = localStorage.getItem('apiKey');
+                const savedNotif = localStorage.getItem('notificationEnabled');
+                const savedHistory = localStorage.getItem('vrHistory');
+                
+                if (savedKey) setApiKey(savedKey);
+                if (savedNotif) setNotificationEnabled(savedNotif === 'true');
+                if (savedHistory) setHistory(JSON.parse(savedHistory));
+            }, []);
+
+            // 자동 새로고침
+            useEffect(() => {
+                if (autoRefresh && apiKey) {
+                    refreshInterval.current = setInterval(() => {
+                        fetchRealTimePrices();
+                    }, 60000); // 1분마다
+                    
+                    return () => {
+                        if (refreshInterval.current) {
+                            clearInterval(refreshInterval.current);
+                        }
+                    };
+                }
+            }, [autoRefresh, apiKey]);
+
+            // 실시간 주가 가져오기 (Alpha Vantage API 또는 Finnhub 사용)
+            const fetchRealTimePrices = async () => {
+                if (!apiKey) {
+                    alert('API 키를 먼저 설정해주세요!');
+                    setShowApiSetup(true);
+                    return;
+                }
+                
+                setIsLoadingPrice(true);
+                
+                try {
+                    // Alpha Vantage API 사용 (무료 티어: 5 calls/min, 500 calls/day)
+                    const fetchStock = async (symbol) => {
+                        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        
+                        if (data['Global Quote']) {
+                            return {
+                                price: parseFloat(data['Global Quote']['05. price']),
+                                change: parseFloat(data['Global Quote']['09. change']),
+                                changePercent: parseFloat(data['Global Quote']['10. change percent'].replace('%', ''))
+                            };
+                        }
+                        throw new Error('API 응답 오류');
+                    };
+                    
+                    const [solxData, tqqqData] = await Promise.all([
+                        fetchStock('SOLX'),
+                        fetchStock('TQQQ')
+                    ]);
+                    
+                    const oldSOLXPrice = portfolio.SOLX.price;
+                    const oldTQQQPrice = portfolio.TQQQ.price;
+                    
+                    setPortfolio({
+                        SOLX: { ...portfolio.SOLX, price: solxData.price },
+                        TQQQ: { ...portfolio.TQQQ, price: tqqqData.price }
+                    });
+                    
+                    setPriceChangeSOLX(solxData.changePercent);
+                    setPriceChangeTQQQ(tqqqData.changePercent);
+                    setLastUpdate(new Date());
+                    
+                    // 리밸런싱 알림 체크
+                    checkRebalancingAlert(solxData.price, tqqqData.price);
+                    
+                    alert('주가가 업데이트되었습니다!');
+                    
+                } catch (error) {
+                    console.error('주가 가져오기 실패:', error);
+                    alert('주가를 가져오는데 실패했습니다. API 키를 확인해주세요.');
+                } finally {
+                    setIsLoadingPrice(false);
+                }
+            };
+
+            // 간단한 주가 가져오기 (API 키 없이 사용 - Yahoo Finance 또는 직접 입력)
+            const fetchSimplePrices = async () => {
+                setIsLoadingPrice(true);
+                
+                try {
+                    // 여기서는 사용자가 직접 입력하도록 안내
+                    const solxPrice = prompt('SOLX 현재 주가를 입력하세요:');
+                    const tqqqPrice = prompt('TQQQ 현재 주가를 입력하세요:');
+                    
+                    if (solxPrice && tqqqPrice) {
+                        setPortfolio({
+                            SOLX: { ...portfolio.SOLX, price: parseFloat(solxPrice) },
+                            TQQQ: { ...portfolio.TQQQ, price: parseFloat(tqqqPrice) }
+                        });
+                        setLastUpdate(new Date());
+                        checkRebalancingAlert(parseFloat(solxPrice), parseFloat(tqqqPrice));
+                    }
+                } finally {
+                    setIsLoadingPrice(false);
+                }
+            };
+
+            // 리밸런싱 알림 체크
+            const checkRebalancingAlert = (solxPrice, tqqqPrice) => {
+                const testPortfolio = {
+                    SOLX: { ...portfolio.SOLX, price: solxPrice },
+                    TQQQ: { ...portfolio.TQQQ, price: tqqqPrice }
+                };
+                
+                const currentAsset = testPortfolio.SOLX.shares * solxPrice + 
+                                    testPortfolio.TQQQ.shares * tqqqPrice;
+                const targetV = poolCash + (poolCash / gValue);
+                
+                if (targetV === 0) return;
+                
+                const vRatio = (currentAsset / targetV) * 100;
+                const needsRebalance = Math.abs(vRatio - 100) > threshold;
+                
+                if (needsRebalance) {
+                    const action = vRatio > 100 ? '매도' : '매수';
+                    const message = `🔔 리밸런싱 필요! ${action} 시점입니다. (V비율: ${vRatio.toFixed(1)}%)`;
+                    
+                    addNotification(message);
+                    
+                    // 브라우저 알림
+                    if (notificationEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                        new Notification('라오어 VR 알림', {
+                            body: message,
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%234f46e5" width="100" height="100"/><text y="75" font-size="70" fill="white" text-anchor="middle" x="50">📊</text></svg>'
+                        });
+                    }
+                }
+            };
+
+            // 알림 추가
+            const addNotification = (message) => {
+                const newNotif = {
+                    id: Date.now(),
+                    message,
+                    timestamp: new Date()
+                };
+                setNotifications(prev => [newNotif, ...prev.slice(0, 9)]);
+            };
+
+            // 브라우저 알림 권한 요청
+            const requestNotificationPermission = async () => {
+                if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        setNotificationEnabled(true);
+                        localStorage.setItem('notificationEnabled', 'true');
+                        alert('알림이 활성화되었습니다!');
+                    }
+                } else {
+                    alert('이 브라우저는 알림을 지원하지 않습니다.');
+                }
+            };
+
+            const getCurrentAssetValue = () => {
+                return portfolio.SOLX.shares * portfolio.SOLX.price + 
+                       portfolio.TQQQ.shares * portfolio.TQQQ.price;
+            };
+
+            const calculateTargetV = () => {
+                if (poolCash === 0) return 0;
+                return poolCash + (poolCash / gValue);
+            };
+
+            const getTotalAssets = () => {
+                return getCurrentAssetValue() + poolCash;
+            };
+
+            const getVRatio = () => {
+                const targetV = calculateTargetV();
+                const currentAsset = getCurrentAssetValue();
+                if (targetV === 0) return 0;
+                return (currentAsset / targetV) * 100;
+            };
+
+            const getCurrentRatio = () => {
+                const total = getCurrentAssetValue();
+                if (total === 0) return { SOLX: 0, TQQQ: 0 };
+                
+                return {
+                    SOLX: (portfolio.SOLX.shares * portfolio.SOLX.price / total) * 100,
+                    TQQQ: (portfolio.TQQQ.shares * portfolio.TQQQ.price / total) * 100
+                };
+            };
+
+            const needsVRRebalancing = () => {
+                const vRatio = getVRatio();
+                return Math.abs(vRatio - 100) > threshold;
+            };
+
+            const calculateVRRebalancing = () => {
+                const targetV = calculateTargetV();
+                const currentAsset = getCurrentAssetValue();
+                const difference = currentAsset - targetV;
+
+                if (difference > 0) {
+                    const sellValue = difference;
+                    return {
+                        action: '매도',
+                        totalValue: sellValue,
+                        SOLX: {
+                            shares: (sellValue * (targetRatio.SOLX / 100)) / portfolio.SOLX.price,
+                            value: sellValue * (targetRatio.SOLX / 100)
+                        },
+                        TQQQ: {
+                            shares: (sellValue * (targetRatio.TQQQ / 100)) / portfolio.TQQQ.price,
+                            value: sellValue * (targetRatio.TQQQ / 100)
+                        },
+                        newPool: poolCash + sellValue,
+                        description: `목표 V값보다 $${sellValue.toFixed(2)} 초과. 일부 매도 후 풀에 추가`
+                    };
+                } else {
+                    const buyValue = Math.abs(difference);
+                    const availableCash = Math.min(buyValue, poolCash);
+                    
+                    return {
+                        action: '매수',
+                        totalValue: availableCash,
+                        SOLX: {
+                            shares: (availableCash * (targetRatio.SOLX / 100)) / portfolio.SOLX.price,
+                            value: availableCash * (targetRatio.SOLX / 100)
+                        },
+                        TQQQ: {
+                            shares: (availableCash * (targetRatio.TQQQ / 100)) / portfolio.TQQQ.price,
+                            value: availableCash * (targetRatio.TQQQ / 100)
+                        },
+                        newPool: poolCash - availableCash,
+                        description: `목표 V값보다 $${buyValue.toFixed(2)} 부족. 풀에서 $${availableCash.toFixed(2)} 매수`
+                    };
+                }
+            };
+
+            const saveRecord = () => {
+                const record = {
+                    date: new Date().toLocaleString('ko-KR'),
+                    portfolio: { ...portfolio },
+                    poolCash,
+                    gValue,
+                    targetV: calculateTargetV(),
+                    currentAsset: getCurrentAssetValue(),
+                    totalAssets: getTotalAssets(),
+                    vRatio: getVRatio(),
+                    currentRatio: getCurrentRatio(),
+                    rebalancing: calculateVRRebalancing()
+                };
+                
+                const newHistory = [record, ...history];
+                setHistory(newHistory);
+                localStorage.setItem('vrHistory', JSON.stringify(newHistory));
+                alert('기록이 저장되었습니다!');
+            };
+
+            const saveApiKey = () => {
+                localStorage.setItem('apiKey', apiKey);
+                setShowApiSetup(false);
+                alert('API 키가 저장되었습니다!');
+            };
+
+            const currentRatio = getCurrentRatio();
+            const targetV = calculateTargetV();
+            const vRatio = getVRatio();
+            const vrRebalance = calculateVRRebalancing();
+            const requiresRebalance = needsVRRebalancing();
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 pb-20">
+                    <div className="max-w-4xl mx-auto">
+                        {/* API 설정 모달 */}
+                        {showApiSetup && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                                <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                                    <h2 className="text-xl font-bold mb-4">API 키 설정</h2>
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        Alpha Vantage API 키를 입력하세요. 
+                                        <a href="https://www.alphavantage.co/support/#api-key" target="_blank" className="text-blue-600 underline ml-1">
+                                            무료로 발급받기
+                                        </a>
+                                    </p>
+                                    <input
+                                        type="text"
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        placeholder="API 키 입력"
+                                        className="w-full px-4 py-2 border rounded-lg mb-4"
+                                    />
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={saveApiKey}
+                                            className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold"
+                                        >
+                                            저장
+                                        </button>
+                                        <button
+                                            onClick={() => setShowApiSetup(false)}
+                                            className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold"
+                                        >
+                                            취소
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-4">
+                                        API 키 없이 사용하려면 취소 후 "수동 입력" 버튼을 사용하세요.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-white rounded-2xl shadow-xl p-6 mb-4">
+                            {/* 헤더 */}
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                                        <LucideIcon name="TrendingUp" size={28} className="text-blue-600" />
+                                        라오어 VR Pro
+                                    </h1>
+                                    <p className="text-xs text-gray-600 mt-1">실시간 주가 연동</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    {notifications.length > 0 && (
+                                        <div className="relative">
+                                            <LucideIcon name="Bell" size={20} className="text-red-600 notification-badge" />
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                                {notifications.length}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={() => setShowHistory(!showHistory)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg text-sm"
+                                    >
+                                        <LucideIcon name="History" size={16} />
+                                        기록
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 실시간 주가 업데이트 */}
+                            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 mb-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                                        <LucideIcon name="Zap" size={20} className="text-purple-600" />
+                                        실시간 주가
+                                    </h2>
+                                    {lastUpdate && (
+                                        <span className="text-xs text-gray-500">
+                                            {lastUpdate.toLocaleTimeString('ko-KR')}
+                                        </span>
+                                    )}
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                    <div className="bg-white rounded-lg p-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-semibold text-blue-600">SOLX</span>
+                                            {priceChangeSOLX !== 0 && (
+                                                <span className={`text-xs font-bold ${priceChangeSOLX > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {priceChangeSOLX > 0 ? '+' : ''}{priceChangeSOLX.toFixed(2)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-lg font-bold">${portfolio.SOLX.price.toFixed(2)}</p>
+                                    </div>
+                                    <div className="bg-white rounded-lg p-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-semibold text-green-600">TQQQ</span>
+                                            {priceChangeTQQQ !== 0 && (
+                                                <span className={`text-xs font-bold ${priceChangeTQQQ > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {priceChangeTQQQ > 0 ? '+' : ''}{priceChangeTQQQ.toFixed(2)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-lg font-bold">${portfolio.TQQQ.price.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={fetchRealTimePrices}
+                                        disabled={isLoadingPrice}
+                                        className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold disabled:bg-gray-300"
+                                    >
+                                        <LucideIcon name="RefreshCw" size={16} className={isLoadingPrice ? 'pulse' : ''} />
+                                        API 업데이트
+                                    </button>
+                                    <button
+                                        onClick={fetchSimplePrices}
+                                        className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg text-sm font-semibold"
+                                    >
+                                        수동 입력
+                                    </button>
+                                </div>
+                                
+                                <div className="mt-3 flex items-center justify-between text-xs">
+                                    <button
+                                        onClick={() => setShowApiSetup(true)}
+                                        className="text-purple-600 underline"
+                                    >
+                                        API 키 설정
+                                    </button>
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={autoRefresh}
+                                            onChange={(e) => setAutoRefresh(e.target.checked)}
+                                            className="rounded"
+                                        />
+                                        <span className="text-gray-600">자동 새로고침 (1분)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* 알림 설정 */}
+                            <div className="bg-yellow-50 rounded-xl p-4 mb-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <LucideIcon name="Bell" size={20} className="text-yellow-600" />
+                                        <span className="font-semibold text-sm">리밸런싱 알림</span>
+                                    </div>
+                                    <button
+                                        onClick={requestNotificationPermission}
+                                        disabled={notificationEnabled}
+                                        className="px-3 py-1 bg-yellow-600 text-white rounded-lg text-xs font-semibold disabled:bg-gray-300"
+                                    >
+                                        {notificationEnabled ? '활성화됨' : '활성화'}
+                                    </button>
+                                </div>
+                                {notifications.length > 0 && (
+                                    <div className="mt-3 space-y-2 max-h-32 overflow-y-auto">
+                                        {notifications.slice(0, 3).map(notif => (
+                                            <div key={notif.id} className="bg-white rounded p-2 text-xs">
+                                                <p className="font-semibold text-gray-800">{notif.message}</p>
+                                                <p className="text-gray-500 text-xs">
+                                                    {notif.timestamp.toLocaleTimeString('ko-KR')}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 기존 VR 설정 및 포트폴리오 입력 섹션 */}
+                            <div className="bg-purple-50 rounded-xl p-4 mb-4">
+                                <h2 className="text-lg font-semibold mb-3 text-gray-800 flex items-center gap-2">
+                                    <LucideIcon name="Activity" size={20} className="text-purple-600" />
+                                    VR 설정
+                                </h2>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">투자유형</label>
+                                        <select
+                                            value={investmentType}
+                                            onChange={(e) => {
+                                                setInvestmentType(e.target.value);
+                                                setGValue(recommendedG[e.target.value]);
+                                            }}
+                                            className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg"
+                                        >
+                                            <option value="accumulation">적립식</option>
+                                            <option value="lumpsum">거치식</option>
+                                            <option value="withdrawal">인출식</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">G값</label>
+                                        <input
+                                            type="number"
+                                            value={gValue}
+                                            onChange={(e) => setGValue(Number(e.target.value))}
+                                            className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg"
+                                            min="1"
+                                            max="50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">풀(P) $</label>
+                                        <input
+                                            type="number"
+                                            value={poolCash}
+                                            onChange={(e) => setPoolCash(Number(e.target.value))}
+                                            className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg"
+                                            min="0"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-xs text-gray-600">
+                                    목표 V = ${targetV.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-50 rounded-xl p-4 mb-4">
+                                <h2 className="text-lg font-semibold mb-3 text-gray-800 flex items-center gap-2">
+                                    <LucideIcon name="Target" size={20} className="text-blue-600" />
+                                    목표 비율 & 임계값
+                                </h2>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">SOLX %</label>
+                                        <input
+                                            type="number"
+                                            value={targetRatio.SOLX}
+                                            onChange={(e) => setTargetRatio({ 
+                                                SOLX: Number(e.target.value), 
+                                                TQQQ: 100 - Number(e.target.value) 
+                                            })}
+                                            className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg"
+                                            min="0"
+                                            max="100"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">TQQQ %</label>
+                                        <input
+                                            type="number"
+                                            value={targetRatio.TQQQ}
+                                            onChange={(e) => setTargetRatio({ 
+                                                TQQQ: Number(e.target.value), 
+                                                SOLX: 100 - Number(e.target.value) 
+                                            })}
+                                            className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg"
+                                            min="0"
+                                            max="100"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">임계값 %</label>
+                                        <input
+                                            type="number"
+                                            value={threshold}
+                                            onChange={(e) => setThreshold(Number(e.target.value))}
+                                            className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg"
+                                            min="1"
+                                            max="20"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-green-50 rounded-xl p-4 mb-4">
+                                <h2 className="text-lg font-semibold mb-3 text-gray-800 flex items-center gap-2">
+                                    <LucideIcon name="DollarSign" size={20} className="text-green-600" />
+                                    보유 수량
+                                </h2>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-white p-3 rounded-lg border-2 border-blue-200">
+                                        <h3 className="text-sm font-semibold text-blue-600 mb-2">SOLX 보유량</h3>
+                                        <input
+                                            type="number"
+                                            placeholder="보유 수량"
+                                            value={portfolio.SOLX.shares || ''}
+                                            onChange={(e) => setPortfolio({
+                                                ...portfolio,
+                                                SOLX: { ...portfolio.SOLX, shares: Number(e.target.value) || 0 }
+                                            })}
+                                            className="w-full px-2 py-1 text-sm border rounded mb-2"
+                                            step="0.0001"
+                                        />
+                                        <div className="text-xs text-gray-600">
+                                            평가액: ${(portfolio.SOLX.shares * portfolio.SOLX.price).toFixed(2)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg border-2 border-green-200">
+                                        <h3 className="text-sm font-semibold text-green-600 mb-2">TQQQ 보유량</h3>
+                                        <input
+                                            type="number"
+                                            placeholder="보유 수량"
+                                            value={portfolio.TQQQ.shares || ''}
+                                            onChange={(e) => setPortfolio({
+                                                ...portfolio,
+                                                TQQQ: { ...portfolio.TQQQ, shares: Number(e.target.value) || 0 }
+                                            })}
+                                            className="w-full px-2 py-1 text-sm border rounded mb-2"
+                                            step="0.0001"
+                                        />
+                                        <div className="text-xs text-gray-600">
+                                            평가액: ${(portfolio.TQQQ.shares * portfolio.TQQQ.price).toFixed(2)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {getTotalAssets() > 0 && (
+                                <>
+                                    <div className="grid grid-cols-2 gap-2 mb-4">
+                                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white">
+                                            <p className="text-xs opacity-90">총 자산</p>
+                                            <p className="text-lg font-bold">${getTotalAssets().toFixed(0)}</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 text-white">
+                                            <p className="text-xs opacity-90">목표 V</p>
+                                            <p className="text-lg font-bold">${targetV.toFixed(0)}</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 text-white">
+                                            <p className="text-xs opacity-90">주식</p>
+                                            <p className="text-lg font-bold">${getCurrentAssetValue().toFixed(0)}</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-3 text-white">
+                                            <p className="text-xs opacity-90">V 비율</p>
+                                            <p className="text-lg font-bold">{vRatio.toFixed(1)}%</p>
+                                        </div>
+                                    </div>
+
+                                    <div className={`rounded-lg p-4 mb-4 ${requiresRebalance ? 'bg-red-50 border-2 border-red-200' : 'bg-green-50 border-2 border-green-200'}`}>
+                                        <div className="flex items-start gap-2">
+                                            <LucideIcon name={requiresRebalance ? "AlertCircle" : "RefreshCw"} size={20} className={requiresRebalance ? "text-red-600" : "text-green-600"} />
+                                            <div className="flex-1">
+                                                <p className={`font-semibold text-sm ${requiresRebalance ? 'text-red-800' : 'text-green-800'}`}>
+                                                    {requiresRebalance ? '🔔 리밸런싱 필요!' : '✅ 균형 유지 중'}
+                                                </p>
+                                                <p className={`text-xs ${requiresRebalance ? 'text-red-700' : 'text-green-700'}`}>
+                                                    V값 편차: {(vRatio - 100).toFixed(2)}%
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {poolCash > 0 && vrRebalance && requiresRebalance && (
+                                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-4">
+                                            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                                                <LucideIcon name="RefreshCw" size={20} className="text-indigo-600" />
+                                                리밸런싱 계획
+                                            </h2>
+                                            <div className="bg-white rounded-lg p-3">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className={`font-bold ${vrRebalance.action === '매수' ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {vrRebalance.action}
+                                                    </span>
+                                                    <span className="font-bold text-lg">
+                                                        ${Math.abs(vrRebalance.totalValue).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-gray-600 mb-3">{vrRebalance.description}</p>
+                                                
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="bg-blue-50 rounded p-2">
+                                                        <p className="text-xs font-semibold text-blue-600 mb-1">SOLX</p>
+                                                        <p className="text-xs">{Math.abs(vrRebalance.SOLX.shares).toFixed(4)} 주</p>
+                                                        <p className="text-xs">${Math.abs(vrRebalance.SOLX.value).toFixed(2)}</p>
+                                                    </div>
+                                                    <div className="bg-green-50 rounded p-2">
+                                                        <p className="text-xs font-semibold text-green-600 mb-1">TQQQ</p>
+                                                        <p className="text-xs">{Math.abs(vrRebalance.TQQQ.shares).toFixed(4)} 주</p>
+                                                        <p className="text-xs">${Math.abs(vrRebalance.TQQQ.value).toFixed(2)}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            <button
+                                onClick={saveRecord}
+                                disabled={getTotalAssets() === 0}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg font-semibold disabled:bg-gray-300"
+                            >
+                                <LucideIcon name="Save" size={20} />
+                                현재 상태 저장
+                            </button>
+                        </div>
+
+                        {showHistory && history.length > 0 && (
+                            <div className="bg-white rounded-2xl shadow-xl p-6">
+                                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                    <LucideIcon name="History" size={24} className="text-indigo-600" />
+                                    투자 기록
+                                </h2>
+                                <div className="space-y-3">
+                                    {history.map((record, index) => (
+                                        <div key={index} className="border-2 rounded-lg p-3 text-sm">
+                                            <div className="flex justify-between mb-2">
+                                                <span className="text-xs text-gray-600">{record.date}</span>
+                                                <span className="font-bold text-indigo-600">${record.totalAssets.toFixed(0)}</span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <div>
+                                                    <span className="text-gray-500">목표 V:</span>
+                                                    <span className="ml-1 font-semibold">${record.targetV.toFixed(0)}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">V 비율:</span>
+                                                    <span className="ml-1 font-semibold">{record.vRatio.toFixed(1)}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<LarryVRRebalancerPro />, document.getElementById('root'));
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(err => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
