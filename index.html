@@ -46,14 +46,14 @@
             // 상태 초기화 (로컬 스토리지 우선)
             const [portfolio, setPortfolio] = useState(() => {
                 const saved = localStorage.getItem('vr_portfolio');
-                return saved ? JSON.parse(saved) : { SOLX: { shares: 0, price: 0 }, TQQQ: { shares: 0, price: 0 } };
+                return saved ? JSON.parse(saved) : { soxl: { shares: 0, price: 0 }, TQQQ: { shares: 0, price: 0 } };
             });
             const [poolCash, setPoolCash] = useState(() => Number(localStorage.getItem('vr_poolCash')) || 0);
             const [gValue, setGValue] = useState(() => Number(localStorage.getItem('vr_gValue')) || 10);
             const [threshold, setThreshold] = useState(() => Number(localStorage.getItem('vr_threshold')) || 5);
             const [targetRatio, setTargetRatio] = useState(() => {
                 const saved = localStorage.getItem('vr_targetRatio');
-                return saved ? JSON.parse(saved) : { SOLX: 50, TQQQ: 50 };
+                return saved ? JSON.parse(saved) : { soxl: 50, TQQQ: 50 };
             });
             
             const [apiKey, setApiKey] = useState(localStorage.getItem('apiKey') || '');
@@ -73,7 +73,7 @@
 
             // 계산 로직들
             const currentAssetValue = useMemo(() => 
-                (portfolio.SOLX.shares * portfolio.SOLX.price) + (portfolio.TQQQ.shares * portfolio.TQQQ.price)
+                (portfolio.soxl.shares * portfolio.soxl.price) + (portfolio.TQQQ.shares * portfolio.TQQQ.price)
             , [portfolio]);
 
             const targetV = useMemo(() => poolCash + (poolCash / gValue), [poolCash, gValue]);
@@ -92,9 +92,9 @@
                         if (data['Global Quote']) return parseFloat(data['Global Quote']['05. price']);
                         throw new Error('API Error');
                     };
-                    const [p1, p2] = await Promise.all([fetchStock('SOLX'), fetchStock('TQQQ')]);
+                    const [p1, p2] = await Promise.all([fetchStock('soxl'), fetchStock('TQQQ')]);
                     setPortfolio(prev => ({
-                        SOLX: { ...prev.SOLX, price: p1 },
+                        soxl: { ...prev.soxl, price: p1 },
                         TQQQ: { ...prev.TQQQ, price: p2 }
                     }));
                     setLastUpdate(new Date());
@@ -113,7 +113,7 @@
                 return {
                     action,
                     total: actualBuyAmount,
-                    SOLX: { shares: (actualBuyAmount * (targetRatio.SOLX / 100)) / portfolio.SOLX.price },
+                    soxl: { shares: (actualBuyAmount * (targetRatio.soxl / 100)) / portfolio.soxl.price },
                     TQQQ: { shares: (actualBuyAmount * (targetRatio.TQQQ / 100)) / portfolio.TQQQ.price }
                 };
             };
@@ -141,8 +141,8 @@
                                 </button>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                {['SOLX', 'TQQQ'].map(sym => (
-                                    <div key={sym} className={`p-3 rounded-xl border-2 ${sym === 'SOLX' ? 'border-blue-100' : 'border-green-100'}`}>
+                                {['soxl', 'TQQQ'].map(sym => (
+                                    <div key={sym} className={`p-3 rounded-xl border-2 ${sym === 'soxl' ? 'border-blue-100' : 'border-green-100'}`}>
                                         <label className="block text-[10px] font-bold text-gray-400 mb-1">{sym} 현재가($)</label>
                                         <input 
                                             type="number" 
@@ -210,7 +210,7 @@
                                 <div className="mt-3 bg-white p-3 rounded-xl shadow-sm">
                                     <p className="text-xs font-bold text-gray-500 mb-2">{plan.action} 제안 (총 ${plan.total.toFixed(2)})</p>
                                     <div className="grid grid-cols-2 gap-2 text-sm">
-                                        <div className="text-blue-600 font-bold">SOLX: {plan.SOLX.shares.toFixed(4)}주</div>
+                                        <div className="text-blue-600 font-bold">soxl: {plan.soxl.shares.toFixed(4)}주</div>
                                         <div className="text-green-600 font-bold">TQQQ: {plan.TQQQ.shares.toFixed(4)}주</div>
                                     </div>
                                 </div>
